@@ -1,39 +1,46 @@
-// Conecte o pino TX do ESP8266 ao pino RX1 (19) do Arduino Mega.
-// Conecte o pino RX do ESP8266 ao pino TX1 (18) do Arduino Mega.
-// Conecte os pinos GND de ambos os dispositivos.
-
-void enviaMsgErro(String operacao, int dado) {
-}
-
-void enviaEstadoDispositivoArduino(String dispositivo, String estado) {
-
+void enviarDadosArduino(const char* dados) {
   ComunicacaoUART.flush();
-  ComunicacaoUART.println("Dispositivo: " + dispositivo + " - Estado: " + estado);
-  delay(150);
+  ComunicacaoUART.println(dados);
+  ComunicacaoUART.print("\n");
 }
-
 
 void recebeDadosArduino() {
-  if (ComunicacaoUART.available() > 0) {                            // Verifica se há dados disponíveis para leitura
-    String dadosRecebidos = ComunicacaoUART.readStringUntil('\n');  // Lê a mensagem recebida
-    
-    int idxDispositivo = dadosRecebidos.indexOf("Sensor: "); // Localiza a posição da substring "Sensor: " na mensagem recebida
-    int idxEstado = dadosRecebidos.indexOf(" - Valor: ");  // Localiza a posição da substring " - Valor: " na mensagem recebida
+  static char dadosRecebidos[200];
+  static unsigned int index = 0;
+  static bool mensagemCompleta = false;
 
-    // Verifica se ambas as substrings foram encontradas
-    if (idxDispositivo != -1 && idxEstado != -1) {
-      // Extrai o nome do dispositivo a partir da posição após "Sensor: "
-      String dispositivo = dadosRecebidos.substring(idxDispositivo + 8, idxEstado);
+  while (ComunicacaoUART.available() > 0) {
+    char c = ComunicacaoUART.read();
 
-      // Extrai o estado a partir da posição após " - Valor: "
-      String estado = dadosRecebidos.substring(idxEstado + 10);
-
-      dispositivo.trim(); // Apagar espaços em branco
-      estado.trim(); // Apagar espaços em branco
-
-      // Chama a função para processar e exibir o nome do dispositivo e seu estado
-      enviaRequisicaoPOST(dispositivo, estado);
-      delay(150);
+    if (c == '{') {  // Início de mensagem
+      index = 0;
+      mensagemCompleta = false;
     }
+
+    if (!mensagemCompleta) {
+      dadosRecebidos[index++] = c;
+
+      if (c == '}') {                  // Fim de mensagem
+        dadosRecebidos[index] = '\0';  // Termina a string
+        mensagemCompleta = true;
+        processaDadosRecebidos(dadosRecebidos);
+        break;
+      }
+    }
+  }
+}
+
+void processaDadosRecebidos(char* dados) {
+  //Serial.println(dados);
+
+  String dadosStr(dados);
+  int idxSensor = dadosStr.indexOf("sensor");
+  int idxValor = dadosStr.indexOf("valor");
+
+  if (idxSensor != -1 && idxValor != -1) {
+    String sensor = dadosStr.substring(idxSensor + 9, dadosStr.indexOf("\"", idxSensor + 9));
+    String valor = dadosStr.substring(idxValor + 8, dadosStr.indexOf("\"", idxValor + 8));
+
+    enviarDadosSensor(sensor, valor);
   }
 }
