@@ -4,8 +4,6 @@ ESP8266WiFiMulti wifiMulti;  // Instancia um objeto ESP8266WiFiMulti chamado wif
 
 void conectaWifi() {
 
-  delay(1000); //Aguarda inicialização do Arduino MEGA
-
   const uint32_t connectTimeoutMs = 10000;  // Tempo limite para conectar ao Wi-Fi.
   bool conectado = false;
 
