@@ -17,7 +17,7 @@ void enviarRequisicaoPOST(String dados, const char* operacao) {
 
   int httpResponseCode = http.POST(dados);
 
-  if ((httpResponseCode > 0) && (operacao != "e")) {
+  if ((httpResponseCode > 0) /*&& (operacao != "e")*/) {
     String response = http.getString();
     enviarDadosArduino(response.c_str());
 
